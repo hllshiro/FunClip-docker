@@ -1,8 +1,6 @@
-version: "3.8"
-
 services:
   funclip:
-    image: your-username/funclip:latest
+    image: hllshiroglobal/funclip:latest
     ports:
       - "7860:7860"
     volumes:
