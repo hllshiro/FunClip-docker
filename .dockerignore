@@ -1,6 +1,7 @@
 # Git相关
 .git
 .gitignore
+.github/
 
 # Docker相关
 Dockerfile
@@ -8,12 +9,14 @@ docker-compose.yml
 .dockerignore
 
 # Python相关
-__pycache__
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-env
+env/
+venv/
+.venv/
 pip-log.txt
 pip-delete-this-directory.txt
 .tox
@@ -24,7 +27,6 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
-.git
 .mypy_cache
 .pytest_cache
 .hypothesis
@@ -43,3 +45,14 @@ input/
 # 操作系统相关
 .DS_Store
 Thumbs.db
+
+# 文档和示例
+docs/
+README*.md
+LICENSE
+*.md
+
+# 临时文件
+*.tmp
+*.temp
+.tmp/
