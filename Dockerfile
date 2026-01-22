@@ -29,6 +29,10 @@ RUN pip install --no-cache-dir torch>=1.13,\<2.5.0 torchaudio>=0.13.0,\<2.5.0 --
 # 安装其他依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
+# --- PATCH g4f library for f-string SyntaxError ---
+RUN sed -i "s|f\"Bearer {\"\".join(cls.api_key)}\"}|f\"Bearer {''.join(cls.api_key)}\"}|g" /usr/local/lib/python3.10/site-packages/g4f/Provider/PollinationsAI.py
+# --- END PATCH ---
+
 # 下载字体文件并清理
 RUN mkdir -p font \
     && wget -q --timeout=30 --tries=3 https://isv-data.oss-cn-hangzhou.aliyuncs.com/ics/MaaS/ClipVideo/STHeitiMedium.ttc -O font/STHeitiMedium.ttc \
