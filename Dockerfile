@@ -1,54 +1,40 @@
-# 多阶段构建版本 - 更小的最终镜像
-# 构建阶段
-FROM python:3.10-slim as builder
-
-# 设置环境变量
-ENV DEBIAN_FRONTEND=noninteractive
-
-# 安装构建依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    wget \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# 设置工作目录
-WORKDIR /app
-
-# 复制requirements.txt并安装Python依赖到临时目录
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --user -r requirements.txt
-
-# 下载字体文件
-RUN mkdir -p font \
-    && wget -q https://isv-data.oss-cn-hangzhou.aliyuncs.com/ics/MaaS/ClipVideo/STHeitiMedium.ttc -O font/STHeitiMedium.ttc
-
-# 运行阶段
+# 使用官方Python 3.10镜像作为基础镜像
 FROM python:3.10-slim
 
 # 设置环境变量
 ENV PYTHONPATH=/app \
     GRADIO_SERVER_NAME=0.0.0.0 \
     DEBIAN_FRONTEND=noninteractive \
-    PATH=/root/.local/bin:$PATH
-
-# 安装运行时依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    imagemagick \
-    && find /etc -name "policy.xml" -type f -exec sed -i 's/none/read,write/g' {} \; 2>/dev/null || true \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # 设置工作目录
 WORKDIR /app
 
-# 从构建阶段复制Python包
-COPY --from=builder /root/.local /root/.local
+# 安装系统依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    imagemagick \
+    wget \
+    && find /etc -name "policy.xml" -type f -exec sed -i 's/none/read,write/g' {} \; 2>/dev/null || true \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# 从构建阶段复制字体文件
-COPY --from=builder /app/font ./font
+# 复制requirements.txt
+COPY requirements.txt .
+
+# 分步安装Python依赖，先安装大型包
+RUN pip install --no-cache-dir torch>=1.13,\<2.5.0 torchaudio>=0.13.0,\<2.5.0 --index-url https://download.pytorch.org/whl/cpu
+
+# 安装其他依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 下载字体文件并清理
+RUN mkdir -p font \
+    && wget -q --timeout=30 --tries=3 https://isv-data.oss-cn-hangzhou.aliyuncs.com/ics/MaaS/ClipVideo/STHeitiMedium.ttc -O font/STHeitiMedium.ttc \
+    && apt-get remove -y wget \
+    && apt-get autoremove -y \
+    && rm -rf /tmp/* /var/tmp/* /root/.cache
 
 # 复制项目文件
 COPY . .
